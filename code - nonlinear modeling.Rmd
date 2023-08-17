@@ -1,0 +1,96 @@
+---
+title: "Nonlinear models"
+author: "Justin Lo"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r, warning=FALSE, message = FALSE}
+library(ISLR)
+library(gam)
+library(splines)
+library(randomForest)
+library(tidyverse)
+```
+In this project, I am using the college dataset in ISLR package
+First, to load the dataset and do basic visualisation and to spot non-linear relationship visually
+```{r, fig.dim=c(10,10)}
+college<-College
+par(mfrow=c(2,2))
+plot(college$Outstate, college$Expend)
+plot(college$PhD, college$Expend)
+plot(college$Room.Board, college$Expend)
+plot(college$S.F.Ratio, college$Expend)
+```
+
+I will continue this project with 'expend' as the response and 'PhD' as the predictor, here is the first non-linear regression model. It is a quadratic model.
+```{r}
+regression_model<- college%>% 
+  lm(Expend ~ poly(PhD, 2), data = .)
+summary(regression_model)
+```
+
+Now, I use the regression model to describe the association between the two variables, and then to calculate fitted values across the range of the 'PhD' variable. By recreating the plot between Expend and PhD and add a line representing these fitted values to illustrate the estimated relationship.
+```{r}
+attach(college)
+range(PhD)
+fitted_vals_quadratic <- predict(regression_model, newdata = data.frame(PhD= 8:103))
+#It predicts the values for a new data frame with the PhD variable ranging from 8 to 103.
+plot(PhD, Expend,
+     xlab = "Percentage of faculty with a PhD",
+     ylab = "Predicted Expenditure per Student")
+lines(8:103, fitted_vals_quadratic, col = "red")
+```
+The graph suggests that predicted expenditure per student decreases when moving from low to moderate percentages of faculty with PhDs, and then increases when moving from moderate to high percentages of faculty with PhDs.
+
+To further improve and re-estimate the model, this time including a cubic polynomial. 
+```{r}
+regression_model_2<- lm(Expend ~ poly(PhD,3), data=college)
+summary(regression_model_2)
+
+fitted_vals_cubic<- predict(regression_model_2, newdata = data.frame(PhD=8:103))
+
+fitted_vals_quadratic <- predict(regression_model, newdata = data.frame(PhD= 8:103))
+attach(college)
+plot(PhD, Expend,
+     xlab = "Percentage of faculty with a PhD",
+     ylab = "Predicted Expenditure per Student")
+lines(8:103, fitted_vals_quadratic, col = "red")
+lines(8:103, fitted_vals_cubic, col = 'blue')
+```
+
+Now, we re-estimate with a cubic spline model
+```{r}
+phd_mod_spline <- lm(Expend ~ bs(PhD, df = 5, degree = 3), data = College)
+
+fitted_vals_spline <- predict(phd_mod_spline, newdata = data.frame(PhD = 8:103))
+
+plot(College$PhD, College$Expend,
+     xlab = "Percentage of faculty with a PhD",
+     ylab = "Predicted Expenditure per Student")
+lines(8:103, fitted_vals_quadratic, col = "red")
+lines(8:103, fitted_vals_cubic, col = "blue")
+lines(8:103, fitted_vals_spline, col = "green")
+
+```
+
+Now, with a loess model
+```{r}
+phd_mod_loess <- loess(Expend ~ PhD, data = College, span = .4)
+
+fitted_vals_loess <- predict(phd_mod_loess, newdata = data.frame(PhD = 8:103))
+
+plot(College$PhD, College$Expend,
+     xlab = "Percentage of faculty with a PhD",
+     ylab = "Predicted Expenditure per Student")
+lines(8:103, fitted_vals_quadratic, col = "red")
+lines(8:103, fitted_vals_cubic, col = "blue")
+lines(8:103, fitted_vals_spline, col = "green")
+lines(8:103, fitted_vals_loess, col = "purple")
+```
+
