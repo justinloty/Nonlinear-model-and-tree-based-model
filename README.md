@@ -1,2 +1,2 @@
-# Nonlinear-model-and-tree-based-model
-personal project
+# Nonlinear-modeling
+Built polynomial regression models, cubic spline models, loess models 
